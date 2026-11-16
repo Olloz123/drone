@@ -1,28 +1,24 @@
 #include <Arduino.h>
-#include <ESP32Servo.h>
+#include <DShotRMT.h>
 
-Servo esc;
+DShotRMT motor(GPIO_NUM_27, DSHOT300);
 
-void setup()
-{
-    Serial.begin(115200);
-
-    esc.setPeriodHertz(50);
-    esc.attach(25, 1000, 2000);
-
-    Serial.println("Sending minimum throttle");
-
-    for(int i = 0; i < 500; i++)
-    {
-        esc.writeMicroseconds(1000);
-        delay(20);
+// Send frames continuously for `ms` milliseconds
+void hold(float percent, unsigned long ms) {
+    unsigned long start = millis();
+    while (millis() - start < ms) {
+        if (percent <= 0) motor.sendThrottle(0);       // true 0 = stop/arm
+        else              motor.sendThrottlePercent(percent);
+        delay(1);
     }
-
-    Serial.println("Spin");
-
-    esc.writeMicroseconds(1600);
 }
 
-void loop()
-{
+void setup() {
+    motor.begin();
+    hold(0, 3000);   // arm: 3 s of zero throttle
+}
+
+void loop() {
+    hold(10, 1000);  // 10% for 1 s, start low with props OFF
+    hold(0, 1000);   // stop for 1 s
 }
